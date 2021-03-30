@@ -1,0 +1,7 @@
+# import "./schema/obvious.graphql"
+
+type Query {
+  a: string,
+  b: Obvious
+  c: DontPanic
+}

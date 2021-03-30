@@ -1,4 +1,5 @@
-import { readSync, readFileSync } from 'fs';
+import path from 'path';
+import { readFileSync } from 'fs';
 
 import { SourceMap } from './source_map.js';
 import expandPaths from './util/expandPaths.js';
@@ -53,7 +54,7 @@ async function loadDefinitionFromStream(stream) {
   return new Promise((resolve, reject) => {
     let data = Buffer.alloc(0);
 
-    stream.on('data', chunk => {
+    stream.on('data', (chunk) => {
       data = Buffer.concat([data, chunk]);
     });
 
@@ -91,9 +92,27 @@ function getDefinitionFromFile(path) {
 function getDefinitionSegmentsFromFiles(paths) {
   return paths.reduce((segments, path) => {
     let definition = getDefinitionFromFile(path);
+
     if (definition) {
       segments[path] = definition;
+      Object.assign(segments, resolveImports(path, definition));
     }
     return segments;
   }, {});
+}
+
+const IMPORT_REGEX = /^\s*#\s*import\s+(?:\w+\s+from\s+)?['"]([\./\w\d-_]+)['"]/gm;
+
+function resolveImports(definitionPath, definition) {
+  const matches = Array.from(definition.matchAll(IMPORT_REGEX)).map(
+    (m) => m[1]
+  );
+
+  if (matches.length === 0) return {};
+
+  const importedPaths = matches.map((importedPath) => {
+    return path.resolve(path.join(path.dirname(definitionPath), importedPath));
+  });
+
+  return getDefinitionSegmentsFromFiles(importedPaths);
 }

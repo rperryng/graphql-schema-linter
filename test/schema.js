@@ -85,4 +85,10 @@ extend type Query {
 
     assert.equal(schema.definition, readFileSync(fixturePath).toString('utf8'));
   });
+
+  it('resolves imports', async () => {
+    const fixturePath = `${__dirname}/fixtures/schema.import.graphql`;
+    const schema = await loadSchema({ schemaPaths: [fixturePath] });
+    assert.equal(Object.keys(schema.sourceMap.sourceFiles).length, 2);
+  });
 });
